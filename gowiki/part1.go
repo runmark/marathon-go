@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 )
 
@@ -26,10 +28,11 @@ func load(title string) (*Page, error) {
 	return &Page{title, body}, nil
 }
 
-func main() {
-	p1 := &Page{"TestPage", []byte("This is a sample page.")}
-	p1.save()
+func handler(rw http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(rw, "Hi there, I love %s!", r.URL.Path[1:])
+}
 
-	p2, _ := load("TestPage")
-	fmt.Println(p2.Body)
+func main() {
+	http.HandleFunc("/", handler)
+	log.Fatal(http.ListenAndServe(":8000", nil))
 }
