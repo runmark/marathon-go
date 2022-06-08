@@ -1,11 +1,13 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
 
 type Page struct {
@@ -41,8 +43,22 @@ func renderTemplate(rw http.ResponseWriter, tmpl string, p *Page) {
 	}
 }
 
+func getTitle(rw http.ResponseWriter, r *http.Request) (string, error) {
+	m := validPath.FindStringSubmatch(r.URL.Path)
+	if m == nil {
+		http.NotFound(rw, r)
+		return "", errors.New("invalid Page Title")
+	}
+
+	return m[2], nil
+}
+
 func viewHandler(rw http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/view/"):]
+	title, err := getTitle(rw, r)
+	if err != nil {
+		return
+	}
+
 	p, err := load(title)
 	if err != nil {
 		http.Redirect(rw, r, "/edit/"+title, http.StatusFound)
@@ -54,7 +70,11 @@ func viewHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func editHandler(rw http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/edit/"):]
+	title, err := getTitle(rw, r)
+	if err != nil {
+		return
+	}
+
 	p, err := load(title)
 	if err != nil {
 		p = &Page{Title: title}
@@ -75,18 +95,24 @@ func editHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func saveHandler(rw http.ResponseWriter, r *http.Request) {
-	title := r.URL.Path[len("/save/"):]
+	title, err := getTitle(rw, r)
+	if err != nil {
+		return
+	}
+
 	body := r.FormValue("body")
 	p := &Page{title, []byte(body)}
-	err := p.save()
+	err = p.save()
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	http.Redirect(rw, r, "/view/"+title, http.StatusFound)
 }
 
 var templates = template.Must(template.ParseFiles("view.html", "edit.html"))
+var validPath = regexp.MustCompile("^/(view|edit|save)/([0-9a-zA-Z]+)$")
 
 func main() {
 	http.HandleFunc("/", handler)
