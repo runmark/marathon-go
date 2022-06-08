@@ -72,11 +72,15 @@ func editHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func saveHandler(rw http.ResponseWriter, r *http.Request) {
+<<<<<<< HEAD
 	title := r.URL.Path[len("/save/"):]
 	body := r.FormValue("body")
 	p := &Page{title, []byte(body)}
 	p.save()
 	http.Redirect(rw, r, "/view/"+title, http.StatusFound)
+=======
+
+>>>>>>> 85c75aaf52ea7fb64ef848fc9eb16083cf4d998f
 }
 
 func main() {
