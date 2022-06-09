@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -30,9 +29,9 @@ func load(title string) (*Page, error) {
 	return &Page{title, body}, nil
 }
 
-func handler(rw http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(rw, "Hi there, I love %s!", r.URL.Path[1:])
-}
+// func handler(rw http.ResponseWriter, r *http.Request) {
+// 	fmt.Fprintf(rw, "Hi there, I love %s!", r.URL.Path[1:])
+// }
 
 func renderTemplate(rw http.ResponseWriter, tmpl string, p *Page) {
 
@@ -52,6 +51,15 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		}
 		fn(rw, r, m[2])
 	}
+}
+
+func rootPathHandler(rw http.ResponseWriter, r *http.Request) {
+	rootPath := r.URL.Path
+	if rootPath != "/" {
+		http.NotFound(rw, r)
+		return
+	}
+	http.Redirect(rw, r, "/view/FrontPage", http.StatusFound)
 }
 
 func viewHandler(rw http.ResponseWriter, r *http.Request, title string) {
@@ -95,7 +103,7 @@ var templates = template.Must(template.ParseFiles(tmplDir+"view.html", tmplDir+"
 var validPath = regexp.MustCompile("^/(view|edit|save)/([0-9a-zA-Z]+)$")
 
 func main() {
-	http.HandleFunc("/", handler)
+	http.HandleFunc("/", rootPathHandler)
 	http.HandleFunc("/view/", makeHandler(viewHandler))
 	http.HandleFunc("/edit/", makeHandler(editHandler))
 	http.HandleFunc("/save/", makeHandler(saveHandler))
