@@ -15,12 +15,12 @@ type Page struct {
 }
 
 func (p *Page) save() error {
-	filename := p.Title + ".txt"
+	filename := dataDir + p.Title + ".txt"
 	return os.WriteFile(filename, p.Body, 0600)
 }
 
 func load(title string) (*Page, error) {
-	filename := title + ".txt"
+	filename := dataDir + title + ".txt"
 
 	body, err := os.ReadFile(filename)
 	if err != nil {
@@ -43,6 +43,7 @@ func renderTemplate(rw http.ResponseWriter, tmpl string, p *Page) {
 }
 
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+
 	return func(rw http.ResponseWriter, r *http.Request) {
 		m := validPath.FindStringSubmatch(r.URL.Path)
 		if m == nil {
@@ -87,7 +88,10 @@ func saveHandler(rw http.ResponseWriter, r *http.Request, title string) {
 	http.Redirect(rw, r, "/view/"+title, http.StatusFound)
 }
 
-var templates = template.Must(template.ParseFiles("view.html", "edit.html"))
+const tmplDir = "./tmpl/"
+const dataDir = "./data/"
+
+var templates = template.Must(template.ParseFiles(tmplDir+"view.html", tmplDir+"edit.html"))
 var validPath = regexp.MustCompile("^/(view|edit|save)/([0-9a-zA-Z]+)$")
 
 func main() {
